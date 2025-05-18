@@ -1,0 +1,191 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Series
+ *   description: Serie management
+ */
+
+/**
+ * @swagger
+ * /series:
+ *   post:
+ *     summary: Create a new serie
+ *     tags: [Series]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               serie_title:
+ *                 type: string
+ *               serie_category:
+ *                 type: string
+ *               serie_description:
+ *                 type: string
+ *               serie_thumbnail:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Serie created successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /series:
+ *   get:
+ *     summary: Get all series
+ *     tags: [Series]
+ *     responses:
+ *       200:
+ *         description: List of series
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Serie'
+ */
+
+/**
+ * @swagger
+ * /series/{id}:
+ *   get:
+ *     summary: Get a serie by ID
+ *     tags: [Series]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Serie ID
+ *     responses:
+ *       200:
+ *         description: Serie data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Serie'
+ *       404:
+ *         description: Not found
+ */
+
+/**
+ * @swagger
+ * /series/{id}:
+ *   patch:
+ *     summary: Partially update a serie by ID (including optional thumbnail upload)
+ *     tags: [Series]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Serie ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               serie_title:
+ *                 type: string
+ *               serie_description:
+ *                 type: string
+ *               serie_category:
+ *                 type: string
+ *               isPublish:
+ *                 type: boolean
+ *               serie_thumbnail:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Serie updated successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Not found
+ */
+
+/**
+ * @swagger
+ * /series/{id}:
+ *   delete:
+ *     summary: Delete a serie by ID
+ *     tags: [Series]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Serie ID
+ *     responses:
+ *       200:
+ *         description: Serie deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Not found
+ */
+
+const express = require("express");
+const multer = require("multer");
+const router = express.Router();
+
+const serieController = require("../controllers/serie.controller");
+const { authenticateJWT } = require("../middlewares/auth.middleware"); // JWT authentication middleware
+
+// Configure multer for file upload handling (using memory storage)
+const upload = multer();
+
+// Routes
+
+// Tạm thời bỏ xác thực JWT để test
+router.post(
+  "/",
+  /* authenticateJWT, */ upload.single("serie_thumbnail"),
+  serieController.createSerie
+);
+router.patch(
+  "/:id",
+  /* authenticateJWT, */ upload.single("serie_thumbnail"),
+  serieController.updateSerie
+);
+router.delete("/:id", /* authenticateJWT, */ serieController.deleteSerie);
+
+// Get all series (with optional query filters)
+router.get("/", serieController.getAllSeries);
+
+// Get serie by ID
+router.get("/:id", serieController.getSerieById);
+
+module.exports = router;

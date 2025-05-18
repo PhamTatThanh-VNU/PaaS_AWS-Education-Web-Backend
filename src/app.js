@@ -1,11 +1,12 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsDoc = require('swagger-jsdoc');
-const { connectToDatabase } = require('./utils/mongodb');
-const userRoutes = require('./routes/user.routes');
-
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsDoc = require("swagger-jsdoc");
+const { connectToDatabase } = require("./utils/mongodb");
+const userRoutes = require("./routes/user.routes");
+const serieRoutes = require("./routes/serie.routes");
+const lessonRoutes = require("./routes/lesson.routes");
 // Initialize express app
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,30 +19,31 @@ app.use(express.urlencoded({ extended: true }));
 // Swagger configuration
 const swaggerOptions = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'Education Web API',
-      version: '1.0.0',
-      description: 'API documentation for Education Web Backend',
+      title: "Education Web API",
+      version: "1.0.0",
+      description: "API documentation for Education Web Backend",
     },
     components: {
       securitySchemes: {
         bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Nhập JWT token từ Cognito vào đây khi cần test các API yêu cầu xác thực'
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description:
+            "Nhập JWT token từ Cognito vào đây khi cần test các API yêu cầu xác thực",
         },
       },
     },
     servers: [
       {
         url: `http://localhost:${PORT}`,
-        description: 'Development server',
+        description: "Development server",
       },
     ],
   },
-  apis: ['src/routes/*.js', 'src/models/*.js'],
+  apis: ["src/routes/*.js", "src/models/*.js"],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
@@ -51,27 +53,40 @@ const swaggerUiOptions = {
   explorer: true,
   swaggerOptions: {
     persistAuthorization: true,
-    docExpansion: 'list',
+    docExpansion: "list",
     filter: true,
-  }
+  },
 };
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerUiOptions));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocs, swaggerUiOptions)
+);
 
 // Routes
-app.use('/users', userRoutes);
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocs, swaggerUiOptions)
+);
+app.use("/users", userRoutes);
+
+app.use("/series", serieRoutes);
+app.use("/lessons", lessonRoutes);
 
 // Thêm route gốc để test API
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    message: 'Welcome to Education Web API',
-    documentation: `http://localhost:${PORT}/api-docs` 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Welcome to Education Web API",
+    documentation: `http://localhost:${PORT}/api-docs`,
   });
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Service is running' });
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", message: "Service is running" });
 });
 
 // Start server
@@ -79,13 +94,15 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectToDatabase();
-    
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
+      console.log(
+        `Swagger docs available at http://localhost:${PORT}/api-docs`
+      );
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
 };

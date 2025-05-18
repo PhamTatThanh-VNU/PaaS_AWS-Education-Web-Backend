@@ -48,17 +48,17 @@ const userSchema = {
   name: { type: String },
   gender: { type: String },
   birthdate: { type: String },
-  createdAt: { 
-    type: Date, 
-    default: new Date() 
+  createdAt: {
+    type: Date,
+    default: new Date(),
   },
-  updatedAt: { 
-    type: Date, 
-    default: new Date() 
-  }
+  updatedAt: {
+    type: Date,
+    default: new Date(),
+  },
 };
 
 module.exports = {
   userSchema,
-  COLLECTION_NAME: 'users'
+  COLLECTION_NAME: "users",
 };
