@@ -61,7 +61,8 @@ const serieSchema = {
   serie_thumbnail: { type: String, trim: true }, // không bắt buộc
   serie_description: { type: String },
   serie_category: { type: String, required: true },
-  // serie_user: { type: String }, // hoặc ObjectId nếu cần
+  serie_user: { type: String, ref: "users" },
+
   serie_lessons: { type: [ObjectId], default: [] },
   isPublish: { type: Boolean, default: false },
   createdAt: { type: Date, default: new Date() },

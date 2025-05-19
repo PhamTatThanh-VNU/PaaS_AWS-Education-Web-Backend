@@ -39,7 +39,7 @@ class LessonService {
 
       const db = await connectToDatabase();
       const lessonCollection = db.collection("lessons");
-
+      const seriesCollection = db.collection("series");
       const newLesson = {
         ...data,
         lesson_video: videoUrl,
@@ -49,6 +49,14 @@ class LessonService {
       };
 
       const result = await lessonCollection.insertOne(newLesson);
+
+      // Lấy id lesson vừa tạo
+      const lessonId = result.insertedId;
+
+      await seriesCollection.updateOne(
+        { _id: new ObjectId(data.lesson_serie) },
+        { $push: { serie_lessons: lessonId } }
+      );
       return { _id: result.insertedId, ...newLesson };
     } catch (err) {
       console.error("Error in createLesson:", err);
@@ -56,23 +64,15 @@ class LessonService {
     }
   }
 
-  async getAllLessons(query = {}) {
+  async getAllLessonsBySerie(seriesId) {
     try {
       const db = await connectToDatabase();
       const lessonCollection = db.collection("lessons");
 
-      const queryCopy = { ...query };
-      if (queryCopy._id) {
-        try {
-          queryCopy._id = new ObjectId(queryCopy._id);
-        } catch {
-          delete queryCopy._id;
-        }
-      }
-
-      return await lessonCollection.find(queryCopy).toArray();
+      const query = { lesson_serie: seriesId }; // Chỉ lọc theo lesson_serie
+      return await lessonCollection.find(query).toArray();
     } catch (err) {
-      console.error("Error in getAllLessons:", err);
+      console.error("Error in getAllLessonsBySerie:", err);
       throw err;
     }
   }
@@ -96,60 +96,66 @@ class LessonService {
 
       data.updatedAt = new Date();
 
-      // Lấy lesson hiện tại
       const currentLesson = await lessonCollection.findOne({
         _id: new ObjectId(id),
       });
+      if (!currentLesson) return null;
 
-      if (!currentLesson) {
-        return null;
-      }
-
-      // Nếu có file video mới, xóa video cũ, upload video mới
-      if (files?.video) {
+      // Xử lý video mới nếu có
+      if (files?.lesson_video && files.lesson_video.length > 0) {
+        // Xóa video cũ nếu có
         if (currentLesson.lesson_video) {
           await deleteFile(currentLesson.lesson_video);
         }
-        const videoName = `${uuidv4()}_${files.video.originalname}`;
+
+        const videoFile = files.lesson_video[0];
+        const videoName = `${uuidv4()}_${videoFile.originalname}`;
         const videoUrl = await uploadFile(
-          files.video.buffer,
+          videoFile.buffer,
           videoName,
-          files.video.mimetype,
+          videoFile.mimetype,
           "video"
         );
+
         data.lesson_video = videoUrl;
       }
 
-      // Nếu có file document mới, xóa document cũ, upload document mới
-      if (files?.document) {
-        if (currentLesson.lesson_document) {
-          await deleteFile(currentLesson.lesson_document);
+      // Xử lý documents mới nếu có
+      if (files?.lesson_documents && files.lesson_documents.length > 0) {
+        // Xóa document cũ nếu có
+        if (currentLesson.lesson_documents) {
+          const docs = Array.isArray(currentLesson.lesson_documents)
+            ? currentLesson.lesson_documents
+            : [currentLesson.lesson_documents];
+          for (const docUrl of docs) {
+            await deleteFile(docUrl);
+          }
         }
-        const docName = `${uuidv4()}_${files.document.originalname}`;
-        const documentUrl = await uploadFile(
-          files.document.buffer,
-          docName,
-          files.document.mimetype,
-          "docs"
-        );
-        data.lesson_document = documentUrl;
+
+        const documentUrls = [];
+        for (const docFile of files.lesson_documents) {
+          const docName = `${uuidv4()}_${docFile.originalname}`;
+          const docUrl = await uploadFile(
+            docFile.buffer,
+            docName,
+            docFile.mimetype,
+            "docs"
+          );
+          documentUrls.push(docUrl);
+        }
+
+        data.lesson_documents = documentUrls;
       }
 
+      // Cập nhật DB
       const updateResult = await lessonCollection.updateOne(
         { _id: new ObjectId(id) },
         { $set: data }
       );
 
-      if (updateResult.matchedCount === 0) {
-        return null;
-      }
+      if (updateResult.matchedCount === 0) return null;
 
-      const updatedLesson = await lessonCollection.findOne({
-        _id: new ObjectId(id),
-      });
-
-      console.log("Update Success");
-      return updatedLesson;
+      return await lessonCollection.findOne({ _id: new ObjectId(id) });
     } catch (err) {
       console.error("Error in updateLesson:", err);
       throw err;

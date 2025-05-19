@@ -62,6 +62,29 @@
 
 /**
  * @swagger
+ * /series/user:
+ *   get:
+ *     summary: Get all series created by the current user
+ *     tags: [Series]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's series
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Serie'
+ *       401:
+ *         description: Unauthorized - JWT token missing or invalid
+ *       500:
+ *         description: Internal Server Error
+ */
+
+/**
+ * @swagger
  * /series/{id}:
  *   get:
  *     summary: Get a serie by ID
@@ -163,7 +186,7 @@ const router = express.Router();
 
 const serieController = require("../controllers/serie.controller");
 const { authenticateJWT } = require("../middlewares/auth.middleware"); // JWT authentication middleware
-
+const lessonRoutes = require("./lesson.routes");
 // Configure multer for file upload handling (using memory storage)
 const upload = multer();
 
@@ -172,20 +195,26 @@ const upload = multer();
 // Tạm thời bỏ xác thực JWT để test
 router.post(
   "/",
-  /* authenticateJWT, */ upload.single("serie_thumbnail"),
+  authenticateJWT,
+  upload.single("serie_thumbnail"),
   serieController.createSerie
 );
 router.patch(
   "/:id",
-  /* authenticateJWT, */ upload.single("serie_thumbnail"),
+  authenticateJWT,
+  upload.single("serie_thumbnail"),
   serieController.updateSerie
 );
-router.delete("/:id", /* authenticateJWT, */ serieController.deleteSerie);
+router.delete("/:id", authenticateJWT, serieController.deleteSerie);
 
 // Get all series (with optional query filters)
 router.get("/", serieController.getAllSeries);
 
+// Get all series of a user
+router.get("/user", authenticateJWT, serieController.getAllSeriesByUser);
+
 // Get serie by ID
 router.get("/:id", serieController.getSerieById);
 
+router.use("/:seriesId/lessons", lessonRoutes);
 module.exports = router;

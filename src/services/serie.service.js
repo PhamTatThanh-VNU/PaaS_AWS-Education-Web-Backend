@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const { connectToDatabase } = require("../utils/mongodb");
 
 class SerieService {
-  async createSerie(data, file) {
+  async createSerie(data, userId, file) {
     try {
       let imageUrl = "";
       if (file) {
@@ -24,6 +24,7 @@ class SerieService {
         ...data,
         serie_thumbnail: imageUrl,
         isPublish: data.isPublish ?? false,
+        serie_user: userId,
         serie_lessons: data.serie_lessons ?? [],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -38,26 +39,41 @@ class SerieService {
     }
   }
 
-  async getAllSeries(query = {}) {
+  async getAllLessonsBySerie(seriesId) {
     try {
       const db = await connectToDatabase();
-      const serieCollection = db.collection("series");
+      const lessonCollection = db.collection("lessons");
 
-      if (query._id) {
-        query._id = new ObjectId(query._id);
-      }
-      return await serieCollection.find(query).toArray();
+      const query = { lesson_serie: seriesId }; // Chỉ lọc theo lesson_serie
+      return await lessonCollection.find(query).toArray();
     } catch (err) {
-      console.error("Error in getAllSeries:", err);
+      console.error("Error in getAllLessonsBySerie:", err);
       throw err;
     }
   }
 
+  async getAllSeriesByUser(userId) {
+    try {
+      const db = await connectToDatabase();
+      const serieCollection = db.collection("series");
+
+      const series = await serieCollection
+        .find({ serie_user: userId })
+        .toArray();
+      return series;
+    } catch (err) {
+      console.error("Error in getAllSeriesByUser:", err);
+      throw err;
+    }
+  }
   async getSerieById(id) {
     try {
       const db = await connectToDatabase();
       const serieCollection = db.collection("series");
 
+      if (!ObjectId.isValid(id)) {
+        throw new Error("Invalid id format");
+      }
       return await serieCollection.findOne({ _id: new ObjectId(id) });
     } catch (err) {
       console.error("Error in getSerieById:", err);

@@ -6,7 +6,8 @@ class LessonController {
     try {
       const data = req.body;
       const files = req.files || {}; // files: { video: [...], document: [...] }
-
+      const { seriesId } = req.params;
+      data.lesson_serie = seriesId;
       // Lấy file đầu tiên trong mỗi mảng nếu có (vì multer fields trả về mảng)
       const formattedFiles = {
         video: files.lesson_video ? files.lesson_video[0] : null,
@@ -27,7 +28,8 @@ class LessonController {
   // [GET] /lessons
   async getAllLessons(req, res) {
     try {
-      const lessons = await lessonService.getAllLessons(req.query);
+      const { seriesId } = req.params;
+      const lessons = await lessonService.getAllLessonsBySerie(seriesId);
       return res.status(200).json(lessons);
     } catch (err) {
       console.error("Error in getAllLessons:", err);
@@ -52,10 +54,16 @@ class LessonController {
   // [PUT] /lessons/:id
   async updateLesson(req, res) {
     try {
-      const updated = await lessonService.updateLesson(req.params.id, req.body);
+      const { id } = req.params;
+      const data = req.body;
+      const files = req.files;
+
+      const updated = await lessonService.updateLesson(id, data, files);
+
       if (!updated) {
         return res.status(404).json({ message: "Lesson not found" });
       }
+
       return res.status(200).json(updated);
     } catch (err) {
       console.error("Error in updateLesson:", err);

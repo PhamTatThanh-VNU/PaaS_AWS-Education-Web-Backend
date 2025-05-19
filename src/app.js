@@ -74,7 +74,6 @@ app.use(
 app.use("/users", userRoutes);
 
 app.use("/series", serieRoutes);
-app.use("/lessons", lessonRoutes);
 
 // Thêm route gốc để test API
 app.get("/", (req, res) => {

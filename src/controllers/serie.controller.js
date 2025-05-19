@@ -6,13 +6,10 @@ class SerieController {
     try {
       const data = req.body;
       const file = req.file || null;
-
       //   // Taking userID
-      //   const userId = req.user.userId;
-      const newSerie = await serieService.createSerie(
-        { ...data /*, serie_user: userId  */ },
-        file
-      );
+      const userId = req.user?.userId;
+
+      const newSerie = await serieService.createSerie(data, userId, file);
 
       return res.status(201).json(newSerie);
     } catch (err) {
@@ -31,11 +28,23 @@ class SerieController {
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
-
+  // [GET] /series/user
+  async getAllSeriesByUser(req, res) {
+    try {
+      const userId = req.user?.userId;
+      console.log("userId:", userId);
+      const series = await serieService.getAllSeriesByUser(userId);
+      return res.status(200).json(series);
+    } catch (err) {
+      console.error("Error in getAllSeriesByUser:", err);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
   // [GET] /series/:id
   async getSerieById(req, res) {
     try {
-      const serie = await serieService.getSerieById(req.params.id);
+      const serieId = req.params.id;
+      const serie = await serieService.getSerieById(serieId);
       if (!serie) {
         return res.status(404).json({ message: "Serie not found" });
       }
