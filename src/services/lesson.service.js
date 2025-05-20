@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const { connectToDatabase } = require("../utils/mongodb");
 
 class LessonService {
-  async createLesson(data, files) {
+  async createLesson(data, userId, files) {
     try {
       let videoUrl = "";
       let documentUrls = [];
@@ -15,7 +15,7 @@ class LessonService {
           files.video.buffer,
           videoName,
           files.video.mimetype,
-          "video"
+          `user-${userId}/video`
         );
       }
 
@@ -31,7 +31,7 @@ class LessonService {
             doc.buffer,
             docName,
             doc.mimetype,
-            "docs"
+            `user-${userId}/docs`
           );
           documentUrls.push(documentUrl);
         }
@@ -114,7 +114,7 @@ class LessonService {
           videoFile.buffer,
           videoName,
           videoFile.mimetype,
-          "video"
+          `user-${userId}/video`
         );
 
         data.lesson_video = videoUrl;

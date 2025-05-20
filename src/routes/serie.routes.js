@@ -114,6 +114,38 @@
 
 /**
  * @swagger
+ * /series/search:
+ *   get:
+ *     summary: Search series by title
+ *     tags: [Series]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Keyword to search in series titles
+ *     responses:
+ *       200:
+ *         description: List of series that match the search keyword
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Serie'
+ *       400:
+ *         description: Missing search keyword
+ *       401:
+ *         description: Unauthorized - JWT token missing or invalid
+ *       500:
+ *         description: Internal Server Error
+ */
+
+/**
+ * @swagger
  * /series/{id}:
  *   patch:
  *     summary: Partially update a serie by ID (including optional thumbnail upload)
@@ -212,6 +244,9 @@ router.get("/", serieController.getAllSeries);
 
 // Get all series of a user
 router.get("/user", authenticateJWT, serieController.getAllSeriesByUser);
+
+// Search series by title
+router.get("/search", serieController.searchSeriesByTitle);
 
 // Get serie by ID
 router.get("/:id", serieController.getSerieById);

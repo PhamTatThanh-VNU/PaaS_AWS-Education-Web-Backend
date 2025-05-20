@@ -38,6 +38,31 @@ class SerieService {
       throw err;
     }
   }
+  async searchSeriesByTitle(keyword) {
+    try {
+      const db = await connectToDatabase();
+      const serieCollection = db.collection("series");
+
+      const query = {
+        $text: { $search: keyword },
+      };
+
+      // Tùy chọn: sắp xếp theo độ phù hợp
+      const projection = {
+        score: { $meta: "textScore" },
+      };
+
+      const results = await serieCollection
+        .find(query, { projection })
+        .sort({ score: { $meta: "textScore" } }) // Sắp xếp theo độ phù hợp
+        .toArray();
+
+      return results;
+    } catch (err) {
+      console.error("Error in searchSeriesByTitle:", err);
+      throw err;
+    }
+  }
 
   async getAllLessonsBySerie(seriesId) {
     try {

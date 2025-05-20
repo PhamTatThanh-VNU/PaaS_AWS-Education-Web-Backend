@@ -54,6 +54,21 @@ class SerieController {
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
+  async searchSeriesByTitle(req, res) {
+    try {
+      const keyword = req.query.keyword;
+
+      if (!keyword || keyword.trim() === "") {
+        return res.status(400).json({ message: "Thiếu từ khóa tìm kiếm" });
+      }
+
+      const results = await serieService.searchSeriesByTitle(keyword);
+      return res.status(200).json(results);
+    } catch (err) {
+      console.error("Error in searchSeriesByTitle:", err);
+      return res.status(500).json({ message: "Lỗi khi tìm kiếm series" });
+    }
+  }
 
   // [PATCH] /series/:id
   async updateSerie(req, res) {
