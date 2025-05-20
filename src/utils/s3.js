@@ -13,6 +13,7 @@ const {
 
 const bucketName = process.env.AWS_BUCKET;
 
+const cloudFrontDomain = process.env.CLOUDFRONT_DOMAIN;
 // Khởi tạo S3 client
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -29,17 +30,17 @@ async function uploadFile(buffer, fileName, mimetype, folder) {
     Bucket: bucketName,
     Key: key,
     Body: buffer,
-    ACL: "public-read",
+    // ACL: "public-read",
     ContentType: mimetype,
   };
 
   try {
     await s3.send(new PutObjectCommand(params));
-    const url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-    console.log("Upload thành công, URL:", url);
-    return url;
+    const cloudfrontUrl = `https://${cloudFrontDomain}/${key}`;
+    console.log("Upload thành công, URL:", cloudfrontUrl);
+    return cloudfrontUrl;
   } catch (error) {
-    console.error("Upload lỗi:", err);
+    console.error("Upload lỗi:", error);
     throw error;
   }
 }

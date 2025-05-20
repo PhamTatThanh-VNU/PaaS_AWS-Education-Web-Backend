@@ -76,7 +76,20 @@ class SerieService {
       throw err;
     }
   }
+  async getAllSeries(query = {}) {
+    try {
+      const db = await connectToDatabase();
+      const serieCollection = db.collection("series");
 
+      if (query._id) {
+        query._id = new ObjectId(query._id);
+      }
+      return await serieCollection.find(query).toArray();
+    } catch (err) {
+      console.error("Error in getAllSeries:", err);
+      throw err;
+    }
+  }
   async getAllSeriesByUser(userId) {
     try {
       const db = await connectToDatabase();
@@ -91,6 +104,7 @@ class SerieService {
       throw err;
     }
   }
+
   async getSerieById(id) {
     try {
       const db = await connectToDatabase();
