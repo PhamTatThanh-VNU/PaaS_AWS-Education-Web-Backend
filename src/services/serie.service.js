@@ -1,19 +1,60 @@
 const { ObjectId } = require("mongodb");
-const { uploadFile, deleteFile } = require("../utils/s3");
+const {
+  uploadFile,
+  deleteFile,
+  uploadViaCloudFront,
+  deleteViaCloudFront,
+} = require("../utils/s3");
 const { v4: uuidv4 } = require("uuid");
 const { connectToDatabase } = require("../utils/mongodb");
 
 class SerieService {
-  async createSerie(data, userId, file) {
+  // async createSerie(data, userId, file) {
+  //   try {
+  //     let imageUrl = "";
+  //     if (file) {
+  //       const uniqueName = `${uuidv4()}_${file.originalname}`;
+  //       imageUrl = await uploadFile(
+  //         file.buffer,
+  //         uniqueName,
+  //         file.mimetype,
+  //         "thumbnail"
+  //       );
+  //     }
+
+  //     const db = await connectToDatabase();
+  //     const serieCollection = db.collection("series");
+
+  //     const newSerie = {
+  //       ...data,
+  //       serie_thumbnail: imageUrl,
+  //       isPublish: data.isPublish ?? false,
+  //       serie_user: userId,
+  //       serie_lessons: data.serie_lessons ?? [],
+  //       createdAt: new Date(),
+  //       updatedAt: new Date(),
+  //     };
+
+  //     const result = await serieCollection.insertOne(newSerie);
+  //     console.log("Create Sucess");
+  //     return { _id: result.insertedId, ...newSerie };
+  //   } catch (err) {
+  //     console.error("Error in createSerie:", err);
+  //     throw err;
+  //   }
+  // }
+
+  async createSerie(data, userId, idToken, file) {
     try {
       let imageUrl = "";
       if (file) {
         const uniqueName = `${uuidv4()}_${file.originalname}`;
-        imageUrl = await uploadFile(
+        imageUrl = await uploadViaCloudFront(
+          idToken,
           file.buffer,
           uniqueName,
           file.mimetype,
-          "thumbnail"
+          `thumbnail/user-${userId}`
         );
       }
 
@@ -38,6 +79,7 @@ class SerieService {
       throw err;
     }
   }
+
   async searchSeriesByTitle(keyword) {
     try {
       const db = await connectToDatabase();
@@ -197,6 +239,31 @@ class SerieService {
       throw err;
     }
   }
+
+  // async deleteSerie(idToken, id) {
+  //   try {
+  //     const db = await connectToDatabase();
+  //     const serieCollection = db.collection("series");
+
+  //     // Lấy dữ liệu serie để biết được URL ảnh
+  //     const serie = await serieCollection.findOne({ _id: new ObjectId(id) });
+  //     if (!serie) {
+  //       throw new Error("Serie không tồn tại.");
+  //     }
+
+  //     const result = await serieCollection.deleteOne({ _id: new ObjectId(id) });
+
+  //     // Nếu xóa thành công và có ảnh thì xóa ảnh
+  //     if (result.deletedCount > 0 && serie.serie_thumbnail) {
+  //       await deleteViaCloudFront(idToken, serie.serie_thumbnail);
+  //     }
+  //     console.log("Delete Sucess");
+  //     return result.deletedCount > 0;
+  //   } catch (err) {
+  //     console.error("Error in deleteSerie:", err);
+  //     throw err;
+  //   }
+  // }
 }
 
 module.exports = new SerieService();

@@ -1,10 +1,10 @@
 const { ObjectId } = require("mongodb");
-const { uploadFile, deleteFile } = require("../utils/s3");
+const { uploadFile, deleteFile, uploadViaCloudFront } = require("../utils/s3");
 const { v4: uuidv4 } = require("uuid");
 const { connectToDatabase } = require("../utils/mongodb");
 
 class LessonService {
-  async createLesson(data, userId, files) {
+  async createLesson(data, files) {
     try {
       let videoUrl = "";
       let documentUrls = [];
@@ -15,7 +15,7 @@ class LessonService {
           files.video.buffer,
           videoName,
           files.video.mimetype,
-          `user-${userId}/video`
+          "videos"
         );
       }
 
@@ -31,7 +31,7 @@ class LessonService {
             doc.buffer,
             docName,
             doc.mimetype,
-            `user-${userId}/docs`
+            "docs"
           );
           documentUrls.push(documentUrl);
         }
@@ -42,6 +42,11 @@ class LessonService {
       const seriesCollection = db.collection("series");
       const newLesson = {
         ...data,
+        isPublish:
+          data.isPublish !== undefined
+            ? data.isPublish === "true" || data.isPublish === true
+            : false,
+
         lesson_video: videoUrl,
         lesson_documents: documentUrls,
         createdAt: new Date(),
@@ -77,19 +82,22 @@ class LessonService {
     }
   }
 
-  async getLessonById(id) {
+  async getLessonById(seriesId, lessonId) {
     try {
       const db = await connectToDatabase();
       const lessonCollection = db.collection("lessons");
 
-      return await lessonCollection.findOne({ _id: new ObjectId(id) });
+      return await lessonCollection.findOne({
+        _id: new ObjectId(lessonId),
+        lesson_serie: seriesId,
+      });
     } catch (err) {
       console.error("Error in getLessonById:", err);
       throw err;
     }
   }
 
-  async updateLesson(id, data, files) {
+  async updateLesson(seriesId, lessonId, data, files) {
     try {
       const db = await connectToDatabase();
       const lessonCollection = db.collection("lessons");
@@ -97,7 +105,8 @@ class LessonService {
       data.updatedAt = new Date();
 
       const currentLesson = await lessonCollection.findOne({
-        _id: new ObjectId(id),
+        _id: new ObjectId(lessonId),
+        lesson_serie: seriesId,
       });
       if (!currentLesson) return null;
 
@@ -114,7 +123,7 @@ class LessonService {
           videoFile.buffer,
           videoName,
           videoFile.mimetype,
-          `user-${userId}/video`
+          "videos"
         );
 
         data.lesson_video = videoUrl;
@@ -149,54 +158,110 @@ class LessonService {
 
       // Cập nhật DB
       const updateResult = await lessonCollection.updateOne(
-        { _id: new ObjectId(id) },
+        { _id: new ObjectId(lessonId), lesson_serie: seriesId },
         { $set: data }
       );
 
       if (updateResult.matchedCount === 0) return null;
 
-      return await lessonCollection.findOne({ _id: new ObjectId(id) });
+      return await lessonCollection.findOne({
+        _id: new ObjectId(lessonId),
+        lesson_serie: seriesId,
+      });
     } catch (err) {
       console.error("Error in updateLesson:", err);
       throw err;
     }
   }
 
-  async deleteLesson(id) {
+  async deleteLesson(seriesId, lessonId) {
     try {
       const db = await connectToDatabase();
       const lessonCollection = db.collection("lessons");
 
-      // Lấy lesson để xóa file nếu có
-      const lesson = await lessonCollection.findOne({ _id: new ObjectId(id) });
+      // Find the lesson by both seriesId and lessonId
+      const lesson = await lessonCollection.findOne({
+        _id: new ObjectId(lessonId),
+        lesson_serie: seriesId,
+      });
+      if (!lesson) {
+        throw new Error("Lesson không tồn tại.");
+      }
+      // Delete files as before...
+      if (Array.isArray(lesson.lesson_documents)) {
+        for (const docUrl of lesson.lesson_documents) {
+          await deleteFile(docUrl);
+        }
+      } else if (lesson.lesson_documents) {
+        await deleteFile(lesson.lesson_documents);
+      }
+      // Update DB: set lesson_documents to []
+      const updateResult = await lessonCollection.updateOne(
+        { _id: new ObjectId(lessonId), lesson_serie: seriesId },
+        {
+          $set: {
+            lesson_documents: [],
+            updatedAt: new Date(),
+          },
+        }
+      );
+
+      if (updateResult.matchedCount === 0) {
+        throw new Error("Cập nhật lesson thất bại");
+      }
+      console.log("Delete Success");
+    } catch (err) {
+      console.error("Error in deleteLesson:", err);
+      throw err;
+    }
+  }
+
+  async deleteDocumentByUrl(seriesId, lessonId, docUrl) {
+    try {
+      const db = await connectToDatabase();
+      const lessonCollection = db.collection("lessons");
+
+      const lesson = await lessonCollection.findOne({
+        _id: new ObjectId(lessonId),
+        lesson_serie: seriesId,
+      });
       if (!lesson) {
         throw new Error("Lesson không tồn tại.");
       }
 
-      const result = await lessonCollection.deleteOne({
-        _id: new ObjectId(id),
-      });
-
-      if (result.deletedCount > 0) {
-        if (lesson.lesson_video) {
-          await deleteFile(lesson.lesson_video);
+      let updatedDocuments;
+      if (Array.isArray(lesson.lesson_documents)) {
+        updatedDocuments = lesson.lesson_documents.filter(
+          (url) => url !== docUrl
+        );
+        if (updatedDocuments.length === 0) {
+          updatedDocuments = [];
         }
-
-        // Nếu lesson_documents là mảng (nhiều file) thì xóa từng file
-        if (Array.isArray(lesson.lesson_documents)) {
-          for (const docUrl of lesson.lesson_documents) {
-            await deleteFile(docUrl);
-          }
-        } else if (lesson.lesson_documents) {
-          // Nếu chỉ có 1 document dưới dạng string
-          await deleteFile(lesson.lesson_documents);
-        }
+      } else if (lesson.lesson_documents === docUrl) {
+        updatedDocuments = [];
+      } else {
+        throw new Error("Document URL không tồn tại trong lesson.");
       }
 
-      console.log("Delete Success");
-      return result.deletedCount > 0;
+      await deleteFile(docUrl);
+
+      const updateResult = await lessonCollection.updateOne(
+        { _id: new ObjectId(lessonId), lesson_serie: seriesId },
+        {
+          $set: {
+            lesson_documents: updatedDocuments,
+            updatedAt: new Date(),
+          },
+        }
+      );
+
+      if (updateResult.matchedCount === 0) {
+        throw new Error("Cập nhật lesson thất bại");
+      }
+
+      console.log("Delete document by URL success");
     } catch (err) {
-      console.error("Error in deleteLesson:", err);
+      console.error("Error in deleteDocumentByUrl:", err);
       throw err;
     }
   }
