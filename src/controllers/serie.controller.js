@@ -114,7 +114,7 @@ class SerieController {
     const idToken = req.user?.idToken;
     try {
       const deletedSerie = await serieService.deleteSerie(
-        idToken,
+        // idToken,
         req.params.id
       );
       if (!deletedSerie) {

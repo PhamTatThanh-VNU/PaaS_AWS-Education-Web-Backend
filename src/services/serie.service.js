@@ -166,7 +166,9 @@ class SerieService {
     try {
       const db = await connectToDatabase();
       const serieCollection = db.collection("series");
-
+      if (typeof data.isPublish === "string") {
+        data.isPublish = data.isPublish === "true";
+      }
       data.updatedAt = new Date();
 
       const currentSerie = await serieCollection.findOne({

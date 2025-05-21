@@ -114,6 +114,33 @@ class LessonController {
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
+
+  async getPublishedLessons(req, res) {
+    try {
+      const { seriesId } = req.params;
+
+      if (!seriesId) {
+        return res.status(400).json({
+          success: false,
+          message: "Series ID is required",
+        });
+      }
+
+      const lessons = await lessonService.getPublishedLessonsBySerie(seriesId);
+
+      return res.status(200).json({
+        success: true,
+        data: lessons,
+      });
+    } catch (error) {
+      console.error("Error in getPublishedLessons:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new LessonController();

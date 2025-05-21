@@ -131,6 +131,56 @@
 
 /**
  * @swagger
+ * /series/{seriesId}/lessons/published:
+ *   get:
+ *     summary: Get all published lessons in a series
+ *     description: Retrieves all lessons that are marked as published within a specific series
+ *     tags: [Lessons]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: seriesId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the series
+ *     responses:
+ *       200:
+ *         description: List of published lessons
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Lesson'
+ *       400:
+ *         description: Bad request (e.g., missing seriesId)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Series ID is required
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+
+/**
+ * @swagger
  * /series/{seriesId}/lessons/{lessonId}:
  *   get:
  *     summary: Get a lesson by ID within a series
@@ -192,8 +242,6 @@
  *               lesson_title:
  *                 type: string
  *               lesson_description:
- *                 type: string
- *               lesson_serie:
  *                 type: string
  *               isPublish:
  *                 type: boolean
@@ -298,6 +346,7 @@
  *       500:
  *         description: Server error
  */
+
 const express = require("express");
 const multer = require("multer");
 const router = express.Router({ mergeParams: true });
@@ -330,6 +379,9 @@ router.patch(
 
 // Get all lessons
 router.get("/", authenticateJWT, lessonController.getAllLessons);
+
+// Get published lessons by series ID
+router.get("/published", authenticateJWT, lessonController.getPublishedLessons);
 
 // Get lesson by ID
 router.get("/:lessonId", authenticateJWT, lessonController.getLessonById);
