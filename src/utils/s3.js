@@ -144,32 +144,49 @@ async function uploadViaCloudFront(
   }
 }
 
-async function deleteViaCloudFront(idToken, fileUrl) {
+function getS3KeyFromUrl(fileUrl) {
+  // Nếu URL bắt đầu bằng domain riêng secureguard.today
+  const customDomain = "https://secureguard.today/";
+  if (fileUrl.startsWith(customDomain)) {
+    // Chỉ lấy phần path phía sau domain, chính là key trong bucket
+    return fileUrl.slice(customDomain.length); // vd: thumbnail/user-.../file.jpg
+  }
+
+  // Nếu là URL chính xác của bucket S3
+  const prefix = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+  if (fileUrl.startsWith(prefix)) {
+    return fileUrl.slice(prefix.length);
+  }
+
+  throw new Error("URL không hợp lệ hoặc không thuộc bucket đã định nghĩa.");
+}
+
+async function deleteViaCloudFront(fileUrl) {
   try {
-    // Xác định URL hợp lệ
-    const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN;
-    const prefix = `https://${CLOUDFRONT_DOMAIN}/`;
+    const key = getS3KeyFromUrl(fileUrl);
 
-    if (!fileUrl.startsWith(prefix)) {
-      throw new Error("URL không hợp lệ hoặc không thuộc CloudFront domain.");
-    }
-
-    // Gửi request DELETE đến CloudFront
-    const response = await axios.delete(fileUrl, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-
-    console.log("Delete Sucess:", response.status);
-    return true;
-  } catch (error) {
-    console.error(
-      "Delete error:",
-      error.response?.status,
-      error.response?.data
+    console.log("Key cần xóa:", key);
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: "team4-storage-backend",
+        Key: key,
+      })
     );
-    throw error;
+
+    await waitUntilObjectNotExists(
+      { client: s3 },
+      { Bucket: "team4-storage-backend", Key: key }
+    );
+
+    console.log(`File "${key}" đã bị xóa khỏi bucket "${bucketName}".`);
+    return true;
+  } catch (err) {
+    if (err instanceof S3ServiceException) {
+      console.error(`Lỗi S3 khi xóa file: ${err.name} - ${err.message}`);
+    } else {
+      console.error("Lỗi khi xóa file:", err);
+    }
+    throw err;
   }
 }
 

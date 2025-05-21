@@ -217,6 +217,31 @@ class SerieService {
     }
   }
 
+  // async deleteSerie(id) {
+  //   try {
+  //     const db = await connectToDatabase();
+  //     const serieCollection = db.collection("series");
+
+  //     // Lấy dữ liệu serie để biết được URL ảnh
+  //     const serie = await serieCollection.findOne({ _id: new ObjectId(id) });
+  //     if (!serie) {
+  //       throw new Error("Serie không tồn tại.");
+  //     }
+
+  //     const result = await serieCollection.deleteOne({ _id: new ObjectId(id) });
+
+  //     // Nếu xóa thành công và có ảnh thì xóa ảnh
+  //     if (result.deletedCount > 0 && serie.serie_thumbnail) {
+  //       await deleteFile(serie.serie_thumbnail);
+  //     }
+  //     console.log("Delete Sucess");
+  //     return result.deletedCount > 0;
+  //   } catch (err) {
+  //     console.error("Error in deleteSerie:", err);
+  //     throw err;
+  //   }
+  // }
+
   async deleteSerie(id) {
     try {
       const db = await connectToDatabase();
@@ -232,7 +257,7 @@ class SerieService {
 
       // Nếu xóa thành công và có ảnh thì xóa ảnh
       if (result.deletedCount > 0 && serie.serie_thumbnail) {
-        await deleteFile(serie.serie_thumbnail);
+        await deleteViaCloudFront(serie.serie_thumbnail);
       }
       console.log("Delete Sucess");
       return result.deletedCount > 0;
@@ -241,31 +266,6 @@ class SerieService {
       throw err;
     }
   }
-
-  // async deleteSerie(idToken, id) {
-  //   try {
-  //     const db = await connectToDatabase();
-  //     const serieCollection = db.collection("series");
-
-  //     // Lấy dữ liệu serie để biết được URL ảnh
-  //     const serie = await serieCollection.findOne({ _id: new ObjectId(id) });
-  //     if (!serie) {
-  //       throw new Error("Serie không tồn tại.");
-  //     }
-
-  //     const result = await serieCollection.deleteOne({ _id: new ObjectId(id) });
-
-  //     // Nếu xóa thành công và có ảnh thì xóa ảnh
-  //     if (result.deletedCount > 0 && serie.serie_thumbnail) {
-  //       await deleteViaCloudFront(idToken, serie.serie_thumbnail);
-  //     }
-  //     console.log("Delete Sucess");
-  //     return result.deletedCount > 0;
-  //   } catch (err) {
-  //     console.error("Error in deleteSerie:", err);
-  //     throw err;
-  //   }
-  // }
 }
 
 module.exports = new SerieService();

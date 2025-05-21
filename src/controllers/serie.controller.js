@@ -111,12 +111,8 @@ class SerieController {
 
   // [DELETE] /series/:id
   async deleteSerie(req, res) {
-    const idToken = req.user?.idToken;
     try {
-      const deletedSerie = await serieService.deleteSerie(
-        // idToken,
-        req.params.id
-      );
+      const deletedSerie = await serieService.deleteSerie(req.params.id);
       if (!deletedSerie) {
         return res.status(404).json({ message: "Serie not found" });
       }
