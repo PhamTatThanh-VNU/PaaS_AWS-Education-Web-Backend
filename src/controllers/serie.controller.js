@@ -2,14 +2,35 @@ const serieService = require("../services/serie.service");
 
 class SerieController {
   // [POST] /series
+  // async createSerie(req, res) {
+  //   try {
+  //     const data = req.body;
+  //     const file = req.file || null;
+  //     //   // Taking userID
+  //     const userId = req.user?.userId;
+  //
+  //     const newSerie = await serieService.createSerie(data, userId, file);
+
+  //     return res.status(201).json(newSerie);
+  //   } catch (err) {
+  //     console.error("Error in createSerie:", err);
+  //     return res.status(500).json({ message: "Internal Server Error" });
+  //   }
+  // }
+
   async createSerie(req, res) {
     try {
       const data = req.body;
       const file = req.file || null;
       //   // Taking userID
       const userId = req.user?.userId;
-
-      const newSerie = await serieService.createSerie(data, userId, file);
+      const idToken = req.user?.idToken;
+      const newSerie = await serieService.createSerie(
+        data,
+        userId,
+        idToken,
+        file
+      );
 
       return res.status(201).json(newSerie);
     } catch (err) {
@@ -90,8 +111,12 @@ class SerieController {
 
   // [DELETE] /series/:id
   async deleteSerie(req, res) {
+    const idToken = req.user?.idToken;
     try {
-      const deletedSerie = await serieService.deleteSerie(req.params.id);
+      const deletedSerie = await serieService.deleteSerie(
+        idToken,
+        req.params.id
+      );
       if (!deletedSerie) {
         return res.status(404).json({ message: "Serie not found" });
       }

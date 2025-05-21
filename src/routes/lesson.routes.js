@@ -104,6 +104,8 @@
  *   get:
  *     summary: Get all lessons in a series
  *     tags: [Lessons]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: seriesId
@@ -129,10 +131,12 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/{id}:
+ * /series/{seriesId}/lessons/{lessonId}:
  *   get:
  *     summary: Get a lesson by ID within a series
  *     tags: [Lessons]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: seriesId
@@ -141,7 +145,7 @@
  *           type: string
  *         description: ID of the series
  *       - in: path
- *         name: id
+ *         name: lessonId
  *         required: true
  *         schema:
  *           type: string
@@ -159,7 +163,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/{id}:
+ * /series/{seriesId}/lessons/{lessonId}:
  *   patch:
  *     summary: Partially update a lesson by ID within a series (including optional file upload)
  *     tags: [Lessons]
@@ -173,7 +177,7 @@
  *           type: string
  *         description: ID of the series
  *       - in: path
- *         name: id
+ *         name: lessonId
  *         required: true
  *         schema:
  *           type: string
@@ -214,7 +218,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/{id}:
+ * /series/{seriesId}/lessons/{lessonId}:
  *   delete:
  *     summary: Delete a lesson by ID within a series
  *     tags: [Lessons]
@@ -228,7 +232,7 @@
  *           type: string
  *         description: ID of the series
  *       - in: path
- *         name: id
+ *         name: lessonId
  *         required: true
  *         schema:
  *           type: string
@@ -240,6 +244,60 @@
  *         description: Not found
  */
 
+/**
+ * @swagger
+ * /series/{seriesId}/lessons/{lessonId}/documents:
+ *   delete:
+ *     summary: Delete a document from a lesson by its URL
+ *     description: Removes a specific document from a lesson's documents by its URL. Requires authentication.
+ *     tags:
+ *       - Lessons
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: seriesId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the series
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the lesson
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               docUrl:
+ *                 type: string
+ *                 description: The URL of the document to delete
+ *             required:
+ *               - docUrl
+ *     responses:
+ *       200:
+ *         description: Document deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Bad request (e.g., document not found)
+ *       401:
+ *         description: Unauthorized (no or invalid token)
+ *       404:
+ *         description: Lesson not found
+ *       500:
+ *         description: Server error
+ */
 const express = require("express");
 const multer = require("multer");
 const router = express.Router({ mergeParams: true });
@@ -261,7 +319,7 @@ router.post(
 
 // Update lesson by ID
 router.patch(
-  "/:id",
+  "/:lessonId",
   authenticateJWT,
   upload.fields([
     { name: "lesson_video", maxCount: 1 },
@@ -271,12 +329,19 @@ router.patch(
 );
 
 // Get all lessons
-router.get("/", /* authenticateJWT */ lessonController.getAllLessons);
+router.get("/", authenticateJWT, lessonController.getAllLessons);
 
 // Get lesson by ID
-router.get("/:id", /* authenticateJWT */ lessonController.getLessonById);
+router.get("/:lessonId", authenticateJWT, lessonController.getLessonById);
 
 // Delete lesson by ID
-router.delete("/:id", authenticateJWT, lessonController.deleteLesson);
+router.delete("/:lessonId", authenticateJWT, lessonController.deleteLesson);
+
+// Delete lesson by ID
+router.delete(
+  "/:lessonId/documents",
+  authenticateJWT,
+  lessonController.deleteDocumentByUrl
+);
 
 module.exports = router;

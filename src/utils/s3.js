@@ -2,6 +2,7 @@ require("dotenv").config({ path: __dirname + "/../../.env" });
 
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 const {
   S3Client,
   PutObjectCommand,
@@ -13,7 +14,6 @@ const {
 
 const bucketName = process.env.AWS_BUCKET;
 
-const cloudFrontDomain = process.env.CLOUDFRONT_DOMAIN;
 // Khởi tạo S3 client
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -23,27 +23,59 @@ const s3 = new S3Client({
   },
 });
 
-// Hàm uploadFile như bạn viết
 async function uploadFile(buffer, fileName, mimetype, folder) {
   const key = `${folder}/${fileName}`;
   const params = {
     Bucket: bucketName,
     Key: key,
     Body: buffer,
-    // ACL: "public-read",
+    ACL: "public-read",
     ContentType: mimetype,
   };
 
   try {
     await s3.send(new PutObjectCommand(params));
-    const cloudfrontUrl = `https://${cloudFrontDomain}/${key}`;
-    console.log("Upload thành công, URL:", cloudfrontUrl);
-    return cloudfrontUrl;
+    const url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    console.log("Upload thành công, URL:", url);
+    return url;
   } catch (error) {
-    console.error("Upload lỗi:", error);
+    console.error("Upload lỗi:", err);
     throw error;
   }
 }
+
+async function uploadViaCloudFront(
+  idToken,
+  buffer,
+  fileName,
+  mimetype,
+  folder
+) {
+  const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN;
+
+  const key = `${folder}/${fileName}`;
+  const uploadUrl = `https://${CLOUDFRONT_DOMAIN}/${key}`;
+
+  try {
+    const response = await axios.put(uploadUrl, buffer, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": mimetype || "application/octet-stream",
+      },
+    });
+
+    console.log("Upload Sucess:", response.status);
+    return uploadUrl;
+  } catch (error) {
+    console.error(
+      "Upload error:",
+      error.response?.status,
+      error.response?.data
+    );
+    throw error;
+  }
+}
+
 async function deleteFile(fileUrl) {
   try {
     const prefix = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
@@ -80,4 +112,70 @@ async function deleteFile(fileUrl) {
   }
 }
 
-module.exports = { uploadFile, deleteFile };
+async function uploadViaCloudFront(
+  idToken,
+  buffer,
+  fileName,
+  mimetype,
+  folder
+) {
+  const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN;
+
+  const key = `${folder}/${fileName}`;
+  const uploadUrl = `https://${CLOUDFRONT_DOMAIN}/${key}`;
+
+  try {
+    const response = await axios.put(uploadUrl, buffer, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": mimetype || "application/octet-stream",
+      },
+    });
+
+    console.log("Upload Sucess:", response.status);
+    return uploadUrl;
+  } catch (error) {
+    console.error(
+      "Upload error:",
+      error.response?.status,
+      error.response?.data
+    );
+    throw error;
+  }
+}
+
+async function deleteViaCloudFront(idToken, fileUrl) {
+  try {
+    // Xác định URL hợp lệ
+    const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN;
+    const prefix = `https://${CLOUDFRONT_DOMAIN}/`;
+
+    if (!fileUrl.startsWith(prefix)) {
+      throw new Error("URL không hợp lệ hoặc không thuộc CloudFront domain.");
+    }
+
+    // Gửi request DELETE đến CloudFront
+    const response = await axios.delete(fileUrl, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+
+    console.log("Delete Sucess:", response.status);
+    return true;
+  } catch (error) {
+    console.error(
+      "Delete error:",
+      error.response?.status,
+      error.response?.data
+    );
+    throw error;
+  }
+}
+
+module.exports = {
+  uploadFile,
+  deleteFile,
+  uploadViaCloudFront,
+  deleteViaCloudFront,
+};

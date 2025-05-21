@@ -40,7 +40,8 @@ class LessonController {
   // [GET] /lessons/:id
   async getLessonById(req, res) {
     try {
-      const lesson = await lessonService.getLessonById(req.params.id);
+      const { seriesId, lessonId } = req.params;
+      const lesson = await lessonService.getLessonById(seriesId, lessonId);
       if (!lesson) {
         return res.status(404).json({ message: "Lesson not found" });
       }
@@ -54,11 +55,16 @@ class LessonController {
   // [PUT] /lessons/:id
   async updateLesson(req, res) {
     try {
-      const { id } = req.params;
+      const { seriesId, lessonId } = req.params;
       const data = req.body;
       const files = req.files;
 
-      const updated = await lessonService.updateLesson(id, data, files);
+      const updated = await lessonService.updateLesson(
+        seriesId,
+        lessonId,
+        data,
+        files
+      );
 
       if (!updated) {
         return res.status(404).json({ message: "Lesson not found" });
@@ -74,13 +80,37 @@ class LessonController {
   // [DELETE] /lessons/:id
   async deleteLesson(req, res) {
     try {
-      const deleted = await lessonService.deleteLesson(req.params.id);
+      const { seriesId, lessonId } = req.params;
+      const deleted = await lessonService.deleteLesson(seriesId, lessonId);
       if (!deleted) {
         return res.status(404).json({ message: "Lesson not found" });
       }
       return res.status(200).json({ message: "Lesson deleted successfully" });
     } catch (err) {
       console.error("Error in deleteLesson:", err);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+
+  async deleteDocumentByUrl(req, res) {
+    try {
+      const { seriesId, lessonId } = req.params;
+      const { docUrl } = req.body;
+      if (!docUrl) {
+        return res.status(400).json({ message: "docUrl is required" });
+      }
+      await lessonService.deleteDocumentByUrl(seriesId, lessonId, docUrl);
+      return res.status(200).json({ message: "Document deleted successfully" });
+    } catch (err) {
+      if (err.message === "Lesson không tồn tại.") {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+      if (err.message === "Document URL không tồn tại trong lesson.") {
+        return res
+          .status(400)
+          .json({ message: "Document not found in lesson" });
+      }
+      console.error("Error in deleteDocumentByUrl:", err);
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
