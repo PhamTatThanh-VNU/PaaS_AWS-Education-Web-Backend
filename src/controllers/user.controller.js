@@ -12,16 +12,16 @@ class UserController {
   async createUser(req, res) {
     try {
       // Get user info from the JWT token and request body
-      const cognitoUserId = req.user.userId;
+      const cognitoUserId = req.body.userId;
       
       // Combine Cognito data with request body (request body takes precedence)
       const userData = {
         // First pull in data from Cognito token
         cognitoUserId, // This will be used as the _id
-        name: req.user.name,
-        email: req.user.email,
-        gender: req.user.gender,
-        birthdate: req.user.birthdate,
+        name: req.body.name,
+        email: req.body.email,
+        gender: req.body.gender,
+        birthdate: req.body.birthdate,
         ...req.body
       };
       

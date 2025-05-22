@@ -51,8 +51,7 @@ const validate = (req, res, next) => {
  *       500:
  *         description: Internal server error
  */
-router.post('/profile',
-  authenticateJWT,
+router.post('/profile',  
   userController.createUser
 );
 
