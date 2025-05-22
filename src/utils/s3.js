@@ -168,7 +168,7 @@ async function deleteViaCloudFront(fileUrl) {
     console.log("Key cần xóa:", key);
     await s3.send(
       new DeleteObjectCommand({
-        Bucket: "team4-storage-backend",
+        Bucket: bucketName,
         Key: key,
       })
     );

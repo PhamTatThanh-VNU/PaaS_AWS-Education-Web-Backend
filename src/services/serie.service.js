@@ -1,49 +1,9 @@
 const { ObjectId } = require("mongodb");
-const {
-  uploadFile,
-  deleteFile,
-  uploadViaCloudFront,
-  deleteViaCloudFront,
-} = require("../utils/s3");
+const { uploadViaCloudFront, deleteViaCloudFront } = require("../utils/s3");
 const { v4: uuidv4 } = require("uuid");
 const { connectToDatabase } = require("../utils/mongodb");
 
 class SerieService {
-  // async createSerie(data, userId, file) {
-  //   try {
-  //     let imageUrl = "";
-  //     if (file) {
-  //       const uniqueName = `${uuidv4()}_${file.originalname}`;
-  //       imageUrl = await uploadFile(
-  //         file.buffer,
-  //         uniqueName,
-  //         file.mimetype,
-  //         "thumbnail"
-  //       );
-  //     }
-
-  //     const db = await connectToDatabase();
-  //     const serieCollection = db.collection("series");
-
-  //     const newSerie = {
-  //       ...data,
-  //       serie_thumbnail: imageUrl,
-  //       isPublish: data.isPublish ?? false,
-  //       serie_user: userId,
-  //       serie_lessons: data.serie_lessons ?? [],
-  //       createdAt: new Date(),
-  //       updatedAt: new Date(),
-  //     };
-
-  //     const result = await serieCollection.insertOne(newSerie);
-  //     console.log("Create Sucess");
-  //     return { _id: result.insertedId, ...newSerie };
-  //   } catch (err) {
-  //     console.error("Error in createSerie:", err);
-  //     throw err;
-  //   }
-  // }
-
   async createSerie(data, userId, idToken, file) {
     try {
       let imageUrl = "";
@@ -54,7 +14,7 @@ class SerieService {
           file.buffer,
           uniqueName,
           file.mimetype,
-          `thumbnail/user-${userId}`
+          `files/user-${userId}/thumbnail`
         );
       }
 
@@ -87,6 +47,7 @@ class SerieService {
 
       const query = {
         $text: { $search: keyword },
+        isPublish: true,
       };
 
       // Tùy chọn: sắp xếp theo độ phù hợp
@@ -162,7 +123,7 @@ class SerieService {
     }
   }
 
-  async updateSerie(id, data, file) {
+  async updateSerie(id, data, userId, idToken, file) {
     try {
       const db = await connectToDatabase();
       const serieCollection = db.collection("series");
@@ -181,16 +142,17 @@ class SerieService {
       if (file) {
         // Xóa thumbnail cũ nếu có
         if (currentSerie.serie_thumbnail) {
-          await deleteFile(currentSerie.serie_thumbnail);
+          await deleteViaCloudFront(currentSerie.serie_thumbnail);
         }
 
         // Upload file mới lên S3
         const uniqueName = `${uuidv4()}_${file.originalname}`;
-        const newImageUrl = await uploadFile(
+        const newImageUrl = await uploadViaCloudFront(
+          idToken,
           file.buffer,
           uniqueName,
           file.mimetype,
-          "thumbnail"
+          `files/user-${userId}/thumbnail`
         );
 
         // Gán lại giá trị thumbnail mới cho data update
@@ -251,6 +213,12 @@ class SerieService {
       const serie = await serieCollection.findOne({ _id: new ObjectId(id) });
       if (!serie) {
         throw new Error("Serie không tồn tại.");
+      }
+      if (serie.serie_lessons && serie.serie_lessons.length > 0) {
+        return {
+          success: false,
+          warning: "Không thể xóa serie khi vẫn còn bài học trong serie này.",
+        };
       }
 
       const result = await serieCollection.deleteOne({ _id: new ObjectId(id) });

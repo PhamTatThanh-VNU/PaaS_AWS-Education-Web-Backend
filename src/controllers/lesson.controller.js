@@ -5,7 +5,9 @@ class LessonController {
   async createLesson(req, res) {
     try {
       const data = req.body;
-      const files = req.files || {}; // files: { video: [...], document: [...] }
+      const files = req.files || {};
+      const userId = req.user?.userId;
+      const idToken = req.user?.idToken; // files: { video: [...], document: [...] }
       const { seriesId } = req.params;
       data.lesson_serie = seriesId;
       // Lấy file đầu tiên trong mỗi mảng nếu có (vì multer fields trả về mảng)
@@ -16,6 +18,8 @@ class LessonController {
 
       const newLesson = await lessonService.createLesson(
         { ...data },
+        userId,
+        idToken,
         formattedFiles
       );
       return res.status(201).json(newLesson);
@@ -58,11 +62,12 @@ class LessonController {
       const { seriesId, lessonId } = req.params;
       const data = req.body;
       const files = req.files;
-
+      const userId = req.user?.userId;
       const updated = await lessonService.updateLesson(
         seriesId,
         lessonId,
         data,
+        userId,
         files
       );
 

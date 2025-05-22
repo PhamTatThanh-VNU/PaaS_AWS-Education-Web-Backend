@@ -97,8 +97,15 @@ class SerieController {
       const id = req.params.id;
       const data = req.body;
       const file = req.file;
-
-      const updatedSerie = await serieService.updateSerie(id, data, file);
+      const userId = req.user?.userId;
+      const idToken = req.user?.idToken;
+      const updatedSerie = await serieService.updateSerie(
+        id,
+        data,
+        userId,
+        idToken,
+        file
+      );
       if (!updatedSerie) {
         return res.status(404).json({ message: "Serie not found" });
       }
@@ -115,6 +122,9 @@ class SerieController {
       const deletedSerie = await serieService.deleteSerie(req.params.id);
       if (!deletedSerie) {
         return res.status(404).json({ message: "Serie not found" });
+      }
+      if (deletedSerie.success === false && deletedSerie.warning) {
+        return res.status(400).json({ message: deletedSerie.warning });
       }
       return res.status(200).json({ message: "Serie deleted successfully" });
     } catch (err) {
