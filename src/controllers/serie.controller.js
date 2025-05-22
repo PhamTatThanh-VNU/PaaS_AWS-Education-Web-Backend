@@ -53,7 +53,6 @@ class SerieController {
   async getAllSeriesByUser(req, res) {
     try {
       const userId = req.user?.userId;
-      console.log("userId:", userId);
       const series = await serieService.getAllSeriesByUser(userId);
       return res.status(200).json(series);
     } catch (err) {

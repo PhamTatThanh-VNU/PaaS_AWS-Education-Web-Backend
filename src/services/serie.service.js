@@ -32,7 +32,6 @@ class SerieService {
       };
 
       const result = await serieCollection.insertOne(newSerie);
-      console.log("Create Sucess");
       return { _id: result.insertedId, ...newSerie };
     } catch (err) {
       console.error("Error in createSerie:", err);
@@ -171,7 +170,6 @@ class SerieService {
       const updatedSerie = await serieCollection.findOne({
         _id: new ObjectId(id),
       });
-      console.log("Update Sucess");
       return updatedSerie;
     } catch (err) {
       console.error("Error in updateSerie:", err);

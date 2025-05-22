@@ -6,5 +6,4 @@ const { connectToDatabase } = require("./mongodb");
   const serieCollection = db.collection("series");
 
   await serieCollection.createIndex({ serie_title: "text" });
-  console.log("✅ Index created on 'serie_title'");
 })();

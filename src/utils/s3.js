@@ -36,7 +36,6 @@ async function uploadFile(buffer, fileName, mimetype, folder) {
   try {
     await s3.send(new PutObjectCommand(params));
     const url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-    console.log("Upload thành công, URL:", url);
     return url;
   } catch (error) {
     console.error("Upload lỗi:", err);
@@ -64,7 +63,6 @@ async function uploadViaCloudFront(
       },
     });
 
-    console.log("Upload Sucess:", response.status);
     return uploadUrl;
   } catch (error) {
     console.error(
@@ -87,7 +85,6 @@ async function deleteFile(fileUrl) {
 
     const key = fileUrl.replace(prefix, "");
 
-    console.log("Key cần xóa:", key);
     await s3.send(
       new DeleteObjectCommand({
         Bucket: bucketName,
@@ -100,7 +97,6 @@ async function deleteFile(fileUrl) {
       { Bucket: bucketName, Key: key }
     );
 
-    console.log(`File "${key}" đã bị xóa khỏi bucket "${bucketName}".`);
     return true;
   } catch (err) {
     if (err instanceof S3ServiceException) {
@@ -132,7 +128,6 @@ async function uploadViaCloudFront(
       },
     });
 
-    console.log("Upload Sucess:", response.status);
     return uploadUrl;
   } catch (error) {
     console.error(
@@ -165,7 +160,6 @@ async function deleteViaCloudFront(fileUrl) {
   try {
     const key = getS3KeyFromUrl(fileUrl);
 
-    console.log("Key cần xóa:", key);
     await s3.send(
       new DeleteObjectCommand({
         Bucket: bucketName,
@@ -178,7 +172,6 @@ async function deleteViaCloudFront(fileUrl) {
       { Bucket: "team4-storage-backend", Key: key }
     );
 
-    console.log(`File "${key}" đã bị xóa khỏi bucket "${bucketName}".`);
     return true;
   } catch (err) {
     if (err instanceof S3ServiceException) {
