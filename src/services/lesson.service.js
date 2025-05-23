@@ -62,11 +62,13 @@ class LessonService {
       const serie = await seriesCollection.findOne({
         _id: new ObjectId(data.lesson_serie),
       });
+      const customMessage = `Bài học mới "${newLesson.lesson_title}" đã được thêm vào series "${serie.serie_title}". Truy cập ngay để xem nội dung!`;
+
       if (serie?.serie_sns) {
         await publishToTopic(
           serie.serie_sns,
           `New Lesson in "${serie.serie_title}"`,
-          `Bài học mới "${newLesson.lesson_title}" đã được thêm vào series "${serie.serie_title}". Truy cập ngay để xem nội dung!`
+          customMessage
         );
       }
 
