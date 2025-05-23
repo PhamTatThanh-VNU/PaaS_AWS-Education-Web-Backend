@@ -89,6 +89,17 @@ class SerieController {
       return res.status(500).json({ message: "Lỗi khi tìm kiếm series" });
     }
   }
+  // [GET] /series/:id/subcribed
+  async getSerieSubcribe(req, res) {
+    try {
+      const userId = req.user?.userId;
+      const series = await serieService.getSerieSubcribe(userId);
+      return res.status(200).json(series);
+    } catch (err) {
+      console.error("Error in getSerieSubcribe:", err);
+      return res.status(500).json({ message: "Get Serie Subcribe Error" });
+    }
+  }
 
   // [PATCH] /series/:id
   async updateSerie(req, res) {
@@ -112,6 +123,66 @@ class SerieController {
     } catch (err) {
       console.error("Error in updateSerie:", err);
       return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+
+  // [POST] /series/:id/subscribe
+  async subcribeSerie(req, res) {
+    try {
+      const serieId = req.params.id;
+      const userId = req.user?.userId;
+      const userEmail = req.user?.email;
+
+      if (!userId || !userEmail) {
+        return res.status(400).json({ message: "Thiếu thông tin người dùng" });
+      }
+
+      const result = await serieService.subcribeSerie(
+        serieId,
+        userId,
+        userEmail
+      );
+
+      if (result.alreadySubscribed) {
+        return res.status(200).json({
+          message: "Bạn đã đăng ký series này rồi.",
+          result,
+        });
+      }
+
+      return res.status(200).json({
+        message:
+          "Đăng ký nhận thông báo thành công. Vui lòng kiểm tra email để xác nhận.",
+        result,
+      });
+    } catch (err) {
+      console.error("Error in subcribeSerie:", err);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+  //[]
+  async unsubscribeSerie(req, res) {
+    try {
+      const serieId = req.params.id;
+      const userId = req.user?.userId;
+      const userEmail = req.user?.email;
+
+      if (!userId || !userEmail) {
+        return res.status(400).json({ message: "Thiếu thông tin người dùng" });
+      }
+
+      const result = await serieService.unsubscribeSerie(
+        serieId,
+        userId,
+        userEmail
+      );
+
+      return res.status(200).json({
+        result,
+      });
+    } catch (err) {
+      console.error("Error in unsubscribeSerie:", err);
+      return res.status(500).json({ message: "Đã xảy ra lỗi khi hủy đăng ký" });
     }
   }
 

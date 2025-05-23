@@ -2,7 +2,7 @@ const { ObjectId } = require("mongodb");
 const { uploadViaCloudFront, deleteViaCloudFront } = require("../utils/s3");
 const { v4: uuidv4 } = require("uuid");
 const { connectToDatabase } = require("../utils/mongodb");
-
+const { publishToTopic } = require("../utils/sns");
 class LessonService {
   async createLesson(data, userId, idToken, files) {
     try {
@@ -44,10 +44,6 @@ class LessonService {
       const seriesCollection = db.collection("series");
       const newLesson = {
         ...data,
-        isPublish:
-          data.isPublish !== undefined
-            ? data.isPublish === "true" || data.isPublish === true
-            : false,
         lesson_video: videoUrl,
         lesson_documents: documentUrls,
         createdAt: new Date(),
@@ -63,6 +59,17 @@ class LessonService {
         { _id: new ObjectId(data.lesson_serie) },
         { $push: { serie_lessons: lessonId } }
       );
+      const serie = await seriesCollection.findOne({
+        _id: new ObjectId(data.lesson_serie),
+      });
+      if (serie?.serie_sns) {
+        await publishToTopic(
+          serie.serie_sns,
+          `New Lesson in "${serie.serie_title}"`,
+          `Bài học mới "${newLesson.lesson_title}" đã được thêm vào series "${serie.serie_title}". Truy cập ngay để xem nội dung!`
+        );
+      }
+
       return { _id: result.insertedId, ...newLesson };
     } catch (err) {
       console.error("Error in createLesson:", err);
@@ -102,9 +109,6 @@ class LessonService {
     try {
       const db = await connectToDatabase();
       const lessonCollection = db.collection("lessons");
-      if (typeof data.isPublish === "string") {
-        data.isPublish = data.isPublish === "true";
-      }
       data.updatedAt = new Date();
 
       const currentLesson = await lessonCollection.findOne({
@@ -275,19 +279,6 @@ class LessonService {
       return result.deletedCount > 0;
     } catch (err) {
       console.error("Error in deleteLesson:", err);
-      throw err;
-    }
-  }
-
-  async getPublishedLessonsBySerie(seriesId) {
-    try {
-      const db = await connectToDatabase();
-      const lessonCollection = db.collection("lessons");
-
-      const query = { lesson_serie: seriesId, isPublish: true };
-      return await lessonCollection.find(query).toArray();
-    } catch (err) {
-      console.error("Error in getPublishedLessonsBySerie:", err);
       throw err;
     }
   }

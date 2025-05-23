@@ -1,12 +1,9 @@
 require("dotenv").config({ path: __dirname + "/../../.env" });
 
-const fs = require("fs");
-const path = require("path");
 const axios = require("axios");
 const {
   S3Client,
   PutObjectCommand,
-  GetObjectCommand,
   DeleteObjectCommand,
   S3ServiceException,
   waitUntilObjectNotExists,

@@ -27,9 +27,6 @@
  *         lesson_serie:
  *           type: string
  *           description: ID of the series the lesson belongs to
- *         isPublish:
- *           type: boolean
- *           description: Publish status of the lesson
  *         lesson_video:
  *           type: string
  *           description: URL or path to lesson video
@@ -76,9 +73,6 @@
  *               lesson_description:
  *                 type: string
  *                 description: Description of the lesson content
- *               isPublish:
- *                 type: boolean
- *                 description: Whether the lesson is published or not
  *               lesson_video:
  *                 type: string
  *                 format: binary
@@ -127,56 +121,6 @@
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Lesson'
- */
-
-/**
- * @swagger
- * /api/series/{seriesId}/lessons/published:
- *   get:
- *     summary: Get all published lessons in a series
- *     description: Retrieves all lessons that are marked as published within a specific series
- *     tags: [Lessons]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: seriesId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID of the series
- *     responses:
- *       200:
- *         description: List of published lessons
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Lesson'
- *       400:
- *         description: Bad request (e.g., missing seriesId)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: Series ID is required
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Server error
  */
 
 /**
@@ -243,8 +187,6 @@
  *                 type: string
  *               lesson_description:
  *                 type: string
- *               isPublish:
- *                 type: boolean
  *               lesson_video:
  *                 type: string
  *                 format: binary
@@ -379,9 +321,6 @@ router.patch(
 
 // Get all lessons
 router.get("/", authenticateJWT, lessonController.getAllLessons);
-
-// Get published lessons by series ID
-router.get("/published", authenticateJWT, lessonController.getPublishedLessons);
 
 // Get lesson by ID
 router.get("/:lessonId", authenticateJWT, lessonController.getLessonById);
