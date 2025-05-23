@@ -93,8 +93,7 @@ class UserController {
       const cognitoUserId = req.user.userId;
       
       // Get user from database
-      let user = await userService.getUserByCognitoId(cognitoUserId);
-      
+      let user = await userService.getUserByCognitoId(cognitoUserId);      
       // If user doesn't exist, create a new profile automatically from Cognito data
       if (!user) {
         const userData = {
@@ -147,13 +146,7 @@ class UserController {
           message: 'User not found'
         });
       }
-      
-      if (!req.user.isAdmin && req.user.userId !== userId) {
-        return res.status(403).json({
-          success: false,
-          message: 'You do not have permission to update this user'
-        });
-      }
+          
       
       // Update the user
       const updatedUser = await userService.updateUser(userId, userData);

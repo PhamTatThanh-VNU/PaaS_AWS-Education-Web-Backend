@@ -6,7 +6,6 @@ const swaggerJsDoc = require("swagger-jsdoc");
 const { connectToDatabase } = require("./utils/mongodb");
 const userRoutes = require("./routes/user.routes");
 const serieRoutes = require("./routes/serie.routes");
-const lessonRoutes = require("./routes/lesson.routes");
 // Initialize express app
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -186,23 +186,7 @@ router.get(
  */
 router.put(
   "/:userId",
-  authenticateJWT,
-  [
-    param("userId").isMongoId().withMessage("Invalid user ID"),
-    body("email").optional().isEmail().withMessage("Valid email is required"),
-    body("username")
-      .optional()
-      .isLength({ min: 3 })
-      .withMessage("Username must be at least 3 characters"),
-    body("fullName")
-      .optional()
-      .isString()
-      .withMessage("Full name must be a string"),
-    body("role")
-      .optional()
-      .isIn(["student", "teacher", "admin"])
-      .withMessage("Invalid role"),
-  ],
+  authenticateJWT,  
   validate,
   userController.updateUser
 );
