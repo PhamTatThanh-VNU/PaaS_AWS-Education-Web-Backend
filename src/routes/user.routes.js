@@ -1,8 +1,8 @@
-const express = require('express');
-const { body, param, validationResult } = require('express-validator');
+const express = require("express");
+const { body, param, validationResult } = require("express-validator");
 const router = express.Router();
-const userController = require('../controllers/user.controller');
-const { authenticateJWT } = require('../middlewares/auth.middleware');
+const userController = require("../controllers/user.controller");
+const { authenticateJWT } = require("../middlewares/auth.middleware");
 
 /**
  * Validation middleware
@@ -13,7 +13,7 @@ const validate = (req, res, next) => {
     return res.status(400).json({
       success: false,
       errors: errors.array(),
-      message: 'Validation error'
+      message: "Validation error",
     });
   }
   next();
@@ -21,7 +21,7 @@ const validate = (req, res, next) => {
 
 /**
  * @swagger
- * /users/profile:
+ * /api/users/profile:
  *   post:
  *     summary: Create user profile
  *     description: Creates a new user profile for the authenticated Cognito user. Returns an error if the user already exists.
@@ -51,13 +51,11 @@ const validate = (req, res, next) => {
  *       500:
  *         description: Internal server error
  */
-router.post('/profile',  
-  userController.createUser
-);
+router.post("/profile", authenticateJWT, userController.createUser);
 
 /**
  * @swagger
- * /users/profile:
+ * /api/users/profile:
  *   get:
  *     summary: Get current user's profile
  *     description: Returns the profile of the currently authenticated user
@@ -83,14 +81,11 @@ router.post('/profile',
  *       500:
  *         description: Internal server error
  */
-router.get('/profile',
-  authenticateJWT,
-  userController.getCurrentUser
-);
+router.get("/profile", authenticateJWT, userController.getCurrentUser);
 
 /**
  * @swagger
- * /users/{userId}:
+ * /api/users/{userId}:
  *   get:
  *     summary: Get a user by ID
  *     security:
@@ -122,18 +117,17 @@ router.get('/profile',
  *       500:
  *         description: Internal server error
  */
-router.get('/:userId',
+router.get(
+  "/:userId",
   authenticateJWT,
-  [
-    param('userId').isMongoId().withMessage('Invalid user ID')
-  ],
+  [param("userId").isMongoId().withMessage("Invalid user ID")],
   validate,
   userController.getUserById
 );
 
 /**
  * @swagger
- * /users/{userId}:
+ * /api/users/{userId}:
  *   put:
  *     summary: Update a user
  *     security:
@@ -190,14 +184,24 @@ router.get('/:userId',
  *       500:
  *         description: Internal server error
  */
-router.put('/:userId',
+router.put(
+  "/:userId",
   authenticateJWT,
   [
-    param('userId').isMongoId().withMessage('Invalid user ID'),
-    body('email').optional().isEmail().withMessage('Valid email is required'),
-    body('username').optional().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-    body('fullName').optional().isString().withMessage('Full name must be a string'),
-    body('role').optional().isIn(['student', 'teacher', 'admin']).withMessage('Invalid role')
+    param("userId").isMongoId().withMessage("Invalid user ID"),
+    body("email").optional().isEmail().withMessage("Valid email is required"),
+    body("username")
+      .optional()
+      .isLength({ min: 3 })
+      .withMessage("Username must be at least 3 characters"),
+    body("fullName")
+      .optional()
+      .isString()
+      .withMessage("Full name must be a string"),
+    body("role")
+      .optional()
+      .isIn(["student", "teacher", "admin"])
+      .withMessage("Invalid role"),
   ],
   validate,
   userController.updateUser

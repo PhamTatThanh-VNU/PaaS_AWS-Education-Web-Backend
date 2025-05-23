@@ -71,9 +71,9 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocs, swaggerUiOptions)
 );
-app.use("/users", userRoutes);
+app.use("/api/users", userRoutes);
 
-app.use("/series", serieRoutes);
+app.use("/api/series", serieRoutes);
 
 // Thêm route gốc để test API
 app.get("/", (req, res) => {

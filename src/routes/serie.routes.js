@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /series:
+ * /api/series:
  *   post:
  *     summary: Create a new serie
  *     tags: [Series]
@@ -40,7 +40,7 @@
 
 /**
  * @swagger
- * /series:
+ * /api/series:
  *   get:
  *     summary: Get all series
  *     tags: [Series]
@@ -62,7 +62,7 @@
 
 /**
  * @swagger
- * /series/user:
+ * /api/series/user:
  *   get:
  *     summary: Get all series created by the current user
  *     tags: [Series]
@@ -85,7 +85,7 @@
 
 /**
  * @swagger
- * /series/{id}:
+ * /api/series/{id}:
  *   get:
  *     summary: Get a serie by ID
  *     tags: [Series]
@@ -114,7 +114,7 @@
 
 /**
  * @swagger
- * /series/search:
+ * /api/series/search:
  *   get:
  *     summary: Search series by title
  *     tags: [Series]
@@ -146,7 +146,7 @@
 
 /**
  * @swagger
- * /series/{id}:
+ * /api/series/{id}:
  *   patch:
  *     summary: Partially update a serie by ID (including optional thumbnail upload)
  *     tags: [Series]
@@ -190,7 +190,7 @@
 
 /**
  * @swagger
- * /series/{id}:
+ * /api/series/{id}:
  *   delete:
  *     summary: Delete a serie by ID
  *     tags: [Series]

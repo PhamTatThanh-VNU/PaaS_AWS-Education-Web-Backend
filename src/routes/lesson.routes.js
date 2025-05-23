@@ -50,7 +50,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/:
+ * /api/series/{seriesId}/lessons/:
  *   post:
  *     summary: Create a new lesson in a series
  *     tags: [Lessons]
@@ -100,7 +100,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/:
+ * /api/series/{seriesId}/lessons/:
  *   get:
  *     summary: Get all lessons in a series
  *     tags: [Lessons]
@@ -131,7 +131,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/published:
+ * /api/series/{seriesId}/lessons/published:
  *   get:
  *     summary: Get all published lessons in a series
  *     description: Retrieves all lessons that are marked as published within a specific series
@@ -181,7 +181,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/{lessonId}:
+ * /api/series/{seriesId}/lessons/{lessonId}:
  *   get:
  *     summary: Get a lesson by ID within a series
  *     tags: [Lessons]
@@ -213,7 +213,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/{lessonId}:
+ * /api/series/{seriesId}/lessons/{lessonId}:
  *   patch:
  *     summary: Partially update a lesson by ID within a series (including optional file upload)
  *     tags: [Lessons]
@@ -266,7 +266,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/{lessonId}:
+ * /api/series/{seriesId}/lessons/{lessonId}:
  *   delete:
  *     summary: Delete a lesson by ID within a series
  *     tags: [Lessons]
@@ -294,7 +294,7 @@
 
 /**
  * @swagger
- * /series/{seriesId}/lessons/{lessonId}/documents:
+ * /api/series/{seriesId}/lessons/{lessonId}/documents:
  *   delete:
  *     summary: Delete a document from a lesson by its URL
  *     description: Removes a specific document from a lesson's documents by its URL. Requires authentication.
