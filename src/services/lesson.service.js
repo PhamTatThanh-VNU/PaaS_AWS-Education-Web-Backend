@@ -107,7 +107,7 @@ class LessonService {
     }
   }
 
-  async updateLesson(seriesId, lessonId, data, userId, files) {
+  async updateLesson(seriesId, lessonId, data, userId, idToken, files) {
     try {
       const db = await connectToDatabase();
       const lessonCollection = db.collection("lessons");

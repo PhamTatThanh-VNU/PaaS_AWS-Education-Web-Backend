@@ -52,7 +52,6 @@ const validate = (req, res, next) => {
  *         description: Internal server error
  */
 router.post("/profile", userController.createUser);
-
 /**
  * @swagger
  * /api/users/profile:
@@ -184,11 +183,6 @@ router.get(
  *       500:
  *         description: Internal server error
  */
-router.put(
-  "/:userId",
-  authenticateJWT,  
-  validate,
-  userController.updateUser
-);
+router.put("/:userId", authenticateJWT, validate, userController.updateUser);
 
 module.exports = router;

@@ -63,11 +63,13 @@ class LessonController {
       const data = req.body;
       const files = req.files;
       const userId = req.user?.userId;
+      const idToken = req.user?.idToken;
       const updated = await lessonService.updateLesson(
         seriesId,
         lessonId,
         data,
         userId,
+        idToken,
         files
       );
 
@@ -119,7 +121,6 @@ class LessonController {
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
-
 }
 
 module.exports = new LessonController();
