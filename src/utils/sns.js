@@ -91,6 +91,10 @@ const unsubscribeFromTopic = async (topicArn, email) => {
 
     await snsClient.send(unsubCommand);
     console.log(`Đã hủy đăng ký: ${email}`);
+    return {
+      message: `Đã hủy đăng ký: ${email}`,
+      pendingConfirmation: false,
+    };
   } catch (err) {
     console.error("Error unsubscribing from topic:", err);
     throw err;

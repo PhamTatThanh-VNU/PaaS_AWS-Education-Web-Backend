@@ -354,22 +354,18 @@ class SerieService {
         };
       }
 
-      // Unsubscribe tất cả user đang theo dõi serie này
-      const subscribedUsers = await userCollection
-        .find({ serie_subcribe: id })
-        .toArray();
+      await userCollection.updateMany(
+        { serie_subcribe: id }, // tìm tất cả user có chứa id trong mảng
+        {
+          $pull: { serie_subcribe: id }, // xóa id đó khỏi mảng
+          $set: { updatedAt: new Date() },
+        }
+      );
 
       if (serie.serie_sns) {
-        for (const user of subscribedUsers) {
-          if (user.email) {
-            await this.unsubscribeSerie(id, user._id, user.email); // cần định nghĩa hàm này
-          }
-        }
-
-        if (serie.serie_sns) {
-          await deleteTopic(serie.serie_sns);
-        }
+        await deleteTopic(serie.serie_sns);
       }
+
       const result = await serieCollection.deleteOne({
         _id: new ObjectId(id),
       });
