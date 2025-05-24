@@ -127,7 +127,7 @@ class SerieController {
   }
 
   // [POST] /series/:id/subscribe
-  async subcribeSerie(req, res) {
+  async subscribeSerie(req, res) {
     try {
       const serieId = req.params.id;
       const userId = req.user?.userId;
@@ -137,7 +137,7 @@ class SerieController {
         return res.status(400).json({ message: "Thiếu thông tin người dùng" });
       }
 
-      const result = await serieService.subcribeSerie(
+      const result = await serieService.subscribeSerie(
         serieId,
         userId,
         userEmail

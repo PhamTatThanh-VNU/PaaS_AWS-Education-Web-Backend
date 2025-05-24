@@ -227,7 +227,7 @@ class SerieService {
     }
   }
 
-  async subcribeSerie(id, userId, userEmail) {
+  async subscribeSerie(id, userId, userEmail) {
     try {
       const db = await connectToDatabase();
       const serieCollection = db.collection("series");

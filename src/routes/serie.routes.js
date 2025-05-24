@@ -328,7 +328,7 @@ router.patch(
   serieController.updateSerie
 );
 
-router.post("/:id/subscribe", authenticateJWT, serieController.subcribeSerie);
+router.post("/:id/subscribe", authenticateJWT, serieController.subscribeSerie);
 router.post(
   "/:id/unsubscribe",
   authenticateJWT,
