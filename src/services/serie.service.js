@@ -304,8 +304,11 @@ class SerieService {
       }
 
       // Gọi tới SNS để hủy subscription
-      await unsubscribeFromTopic(serie.serie_sns, userEmail);
+      const result = await unsubscribeFromTopic(serie.serie_sns, userEmail);
 
+      if (result.pendingConfirmation) {
+        return result;
+      }
       // Xóa seriesId khỏi user.serie_subcribe
       const userUpdate = await userCollection.findOneAndUpdate(
         { _id: userId },

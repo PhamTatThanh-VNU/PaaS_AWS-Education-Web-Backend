@@ -177,6 +177,11 @@ class SerieController {
         userEmail
       );
 
+      if (result.pendingConfirmation) {
+        return res.status(400).json({
+          result,
+        });
+      }
       return res.status(200).json({
         result,
       });

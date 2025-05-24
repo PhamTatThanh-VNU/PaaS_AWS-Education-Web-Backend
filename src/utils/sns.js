@@ -78,6 +78,13 @@ const unsubscribeFromTopic = async (topicArn, email) => {
       throw new Error("Không tìm thấy subscription cho email đã cung cấp.");
     }
 
+    if (subscription.SubscriptionArn === "PendingConfirmation") {
+      return {
+        message:
+          "Email chưa xác nhận, bạn phải xác nhận đăng ký trước khi có thể hủy đăng ký.",
+        pendingConfirmation: true,
+      };
+    }
     const unsubCommand = new UnsubscribeCommand({
       SubscriptionArn: subscription.SubscriptionArn,
     });
