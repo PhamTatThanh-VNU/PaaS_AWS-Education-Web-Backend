@@ -1,0 +1,140 @@
+name: CI/CD Pipeline - Build and Push Docker Images
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+  # Repository names are now configured as GitHub Variables
+  BACKEND_ECR_REPOSITORY: ${{ vars.BACKEND_ECR_REPOSITORY }}
+
+# Permission can be added at job level or workflow level
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+  security-events: write  # This is required for uploading SARIF results
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-CI-CD
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Verify ECR repositories exist
+      run: |
+        echo "Checking if ECR repositories exist..."
+        aws ecr describe-repositories --repository-names ${{ env.BACKEND_ECR_REPOSITORY }} || { echo "Backend repository not found!"; exit 1; }
+        echo "✅ ECR repository exists and is accessible"
+
+    - name: Build and push Backend Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./PaaS_AWS-Education-Web-Backend
+        file: ./PaaS_AWS-Education-Web-Backend/Dockerfile
+        push: true
+        tags: |
+          ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:latest
+          ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}
+        build-args: |
+          PORT=${{ vars.BACKEND_PORT }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION=${{ vars.AWS_REGION }}
+          AWS_BUCKET=${{ secrets.AWS_BUCKET }}
+          COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }}
+          COGNITO_APP_CLIENT_ID=${{ secrets.COGNITO_APP_CLIENT_ID }}
+          CLOUDFRONT_DOMAIN=${{ secrets.CLOUDFRONT_DOMAIN }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Image scan with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always() && github.event_name != 'pull_request'
+      with:
+        sarif_file: 'trivy-results.sarif'
+      continue-on-error: true
+
+    - name: Display Trivy scan results (fallback)
+      if: always()
+      run: |
+        echo "📊 Trivy Security Scan Results:"
+        if [ -f "trivy-results.sarif" ]; then
+          echo "✅ SARIF file generated successfully"
+          # Show summary of findings
+          cat trivy-results.sarif | jq -r '.runs[0].results | length' 2>/dev/null || echo "Unable to parse SARIF results"
+        else
+          echo "❌ No SARIF file found"
+        fi
+
+    - name: Output image information
+      run: |
+        echo "🐳 Backend Image: ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}"
+        echo "✅ Images successfully pushed to ECR!"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-Deploy
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Deploy to ECS (Backend)
+      run: |
+        # Update ECS service to use new image
+        aws ecs update-service \
+          --cluster ${{ vars.ECS_CLUSTER_NAME }} \
+          --service ${{ vars.ECS_BACKEND_SERVICE_NAME }} \
+          --force-new-deployment
+
+    - name: Wait for deployment to complete
+      run: |
+        # Wait for backend service to stabilize
+        aws ecs wait services-stable \
+          --cluster ${{ vars.ECS_CLUSTER_NAME }} \
+          --services ${{ vars.ECS_BACKEND_SERVICE_NAME }}
+
+    - name: Notification
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Deployment successful!"
+        else
+          echo "❌ Deployment failed!"
+        fi 

@@ -1,0 +1,66 @@
+name: Setup AWS Infrastructure
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/setup-infrastructure.yml'
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  BACKEND_ECR_REPOSITORY: ${{ vars.BACKEND_ECR_REPOSITORY }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  setup-infrastructure:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-Infrastructure
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Create ECR repository
+      run: |
+        # Create backend ECR repository
+        aws ecr describe-repositories --repository-names ${{ env.BACKEND_ECR_REPOSITORY }} || \
+        aws ecr create-repository \
+          --repository-name ${{ env.BACKEND_ECR_REPOSITORY }} \
+          --image-scanning-configuration scanOnPush=true \
+          --encryption-configuration encryptionType=AES256
+
+    - name: Set ECR lifecycle policy
+      run: |
+        # Backend repository lifecycle policy
+        aws ecr put-lifecycle-policy \
+          --repository-name ${{ env.BACKEND_ECR_REPOSITORY }} \
+          --lifecycle-policy-text '{
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }'
+
+    - name: Output repository URI
+      run: |
+        echo "Backend ECR Repository URI: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.BACKEND_ECR_REPOSITORY }}" 
