@@ -54,7 +54,6 @@ jobs:
         push: true
         tags: |
           ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:latest
-          ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}
         build-args: |
           PORT=${{ vars.BACKEND_PORT }}
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -71,7 +70,7 @@ jobs:
     - name: Image scan with Trivy
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}
+        image-ref: ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:latest
         format: 'sarif'
         output: 'trivy-results.sarif'
 
@@ -96,7 +95,7 @@ jobs:
 
     - name: Output image information
       run: |
-        echo "🐳 Backend Image: ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}"
+        echo "🐳 Backend Image: ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:latest"
         echo "✅ Images successfully pushed to ECR!"
 
   deploy:
@@ -127,7 +126,7 @@ jobs:
         
         # Update the image URI in task definition and clean up unnecessary fields
         echo "🔄 Updating image URI for backend..."
-        jq --arg IMAGE "${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}" \
+        jq --arg IMAGE "${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:latest" \
           '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' \
           task-def-backend.json > new-task-def-backend.json
 
