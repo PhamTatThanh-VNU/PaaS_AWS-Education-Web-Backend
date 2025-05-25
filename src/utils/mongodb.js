@@ -1,8 +1,8 @@
 require("dotenv").config({ path: __dirname + "/../../.env" });
 const { MongoClient } = require("mongodb");
-
+const path = require("path");
 const uri = process.env.MONGODB_URI;
-
+const fs = require("fs");
 // Export client to be reused throughout the application
 let dbConnection = null;
 
@@ -64,10 +64,10 @@ const connectToDatabase = async () => {
   try {
     console.log("Connecting to DocumentDB...");
 
-    const certPath = await this.ensureSSLCertificate();
+    const certPath = await ensureSSLCertificate();
 
     if (certPath && fs.existsSync(certPath)) {
-      options.tlsCAFile = certPath;
+      clientOptions.tlsCAFile = certPath;
       console.log("Using SSL certificate file for DocumentDB connection");
     } else {
       console.warn("SSL certificate not found, connection may fail");
