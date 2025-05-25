@@ -1,8 +1,8 @@
+require("dotenv").config({ path: __dirname + "/../../.env" });
 const { MongoClient } = require("mongodb");
 const path = require("path");
 
-const uri =
-  "mongodb+srv://user:1@cluster0.9l9x3dx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = process.env.MONGODB_URL;
 
 const client = new MongoClient(uri);
 
