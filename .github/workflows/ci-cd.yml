@@ -49,8 +49,8 @@ jobs:
     - name: Build and push Backend Docker image
       uses: docker/build-push-action@v5
       with:
-        context: ./PaaS_AWS-Education-Web-Backend
-        file: ./PaaS_AWS-Education-Web-Backend/Dockerfile
+        context: ./
+        file: ./Dockerfile
         push: true
         tags: |
           ${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:latest
