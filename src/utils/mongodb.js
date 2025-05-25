@@ -5,7 +5,7 @@ const uri = process.env.MONGODB_URI;
 const fs = require("fs");
 // Export client to be reused throughout the application
 let dbConnection = null;
-
+let client = null;
 const clientOptions = {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
@@ -15,8 +15,6 @@ const clientOptions = {
   retryWrites: false,
   authMechanism: "SCRAM-SHA-1", // DocumentDB dùng SCRAM-SHA-1
 };
-
-const client = new MongoClient(uri, clientOptions);
 
 async function ensureSSLCertificate() {
   const certPath = path.join(__dirname, "..", "global-bundle.pem");
@@ -72,7 +70,7 @@ const connectToDatabase = async () => {
     } else {
       console.warn("SSL certificate not found, connection may fail");
     }
-
+    client = new MongoClient(uri, clientOptions);
     await client.connect();
     console.log("Connected to DocumentDB");
 
