@@ -120,22 +120,40 @@ jobs:
         echo "🚀 Deploying Backend to ECS..."
         
         # Get current task definition
-        TASK_DEFINITION=$(aws ecs describe-task-definition \
+        echo "📋 Getting current backend task definition..."
+        aws ecs describe-task-definition \
           --task-definition ${{ vars.ECS_BACKEND_TASK_DEFINITION_NAME }} \
-          --query 'taskDefinition' --output json)
+          --query 'taskDefinition' --output json > task-def-backend.json
         
-        # Update the image URI in task definition
-        NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}" \
-          '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.placementConstraints) | del(.compatibilities) | del(.registeredAt) | del(.registeredBy)')
-        
+        # Update the image URI in task definition and clean up unnecessary fields
+        echo "🔄 Updating image URI for backend..."
+        jq --arg IMAGE "${{ env.ECR_REGISTRY }}/${{ env.BACKEND_ECR_REPOSITORY }}:${{ github.sha }}" \
+          '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' \
+          task-def-backend.json > new-task-def-backend.json
+
+        # Validate JSON
+        echo "🔍 Validating generated backend JSON..."
+        if ! jq empty new-task-def-backend.json; then
+          echo "❌ Invalid JSON generated for backend:"
+          cat new-task-def-backend.json
+          exit 1
+        fi
+        echo "Generated backend JSON content:"
+        cat new-task-def-backend.json
+
         # Register new task definition
-        NEW_TASK_DEF_ARN=$(echo $NEW_TASK_DEFINITION | aws ecs register-task-definition \
-          --cli-input-json file:///dev/stdin \
+        echo "📝 Registering new backend task definition..."
+        NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+          --cli-input-json file://new-task-def-backend.json \
           --query 'taskDefinition.taskDefinitionArn' --output text)
         
         echo "✅ New backend task definition registered: $NEW_TASK_DEF_ARN"
         
+        # Clean up temporary files
+        rm -f task-def-backend.json new-task-def-backend.json
+        
         # Update ECS service to use new task definition
+        echo "🔄 Updating ECS backend service..."
         aws ecs update-service \
           --cluster ${{ vars.ECS_CLUSTER_NAME }} \
           --service ${{ vars.ECS_BACKEND_SERVICE_NAME }} \
