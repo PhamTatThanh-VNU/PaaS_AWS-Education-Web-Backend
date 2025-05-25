@@ -1,23 +1,7 @@
 const express = require("express");
-const { body, param, validationResult } = require("express-validator");
 const router = express.Router();
 const userController = require("../controllers/user.controller");
 const { authenticateJWT } = require("../middlewares/auth.middleware");
-
-/**
- * Validation middleware
- */
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      errors: errors.array(),
-      message: "Validation error",
-    });
-  }
-  next();
-};
 
 /**
  * @swagger
@@ -118,9 +102,7 @@ router.get("/profile", authenticateJWT, userController.getCurrentUser);
  */
 router.get(
   "/:userId",
-  authenticateJWT,
-  [param("userId").isMongoId().withMessage("Invalid user ID")],
-  validate,
+  authenticateJWT,  
   userController.getUserById
 );
 
@@ -183,6 +165,6 @@ router.get(
  *       500:
  *         description: Internal server error
  */
-router.put("/:userId", authenticateJWT, validate, userController.updateUser);
+router.put("/:userId", authenticateJWT, userController.updateUser);
 
 module.exports = router;
