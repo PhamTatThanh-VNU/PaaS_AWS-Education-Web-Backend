@@ -1,0 +1,11 @@
+nohup: ignoring input
+
+> paas_aws-education-web-backend@1.0.0 start
+> node src/app.js
+
+Connecting to DocumentDB...
+SSL certificate found: /home/ubuntu/PaaS_AWS-Education-Web-Backend/src/global-bundle.pem
+Using SSL certificate file for DocumentDB connection
+Connected to DocumentDB
+Server running on port 3000
+Swagger docs available at http://localhost:3000/api-docs
